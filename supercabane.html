@@ -1212,7 +1212,7 @@ function updateActiveDot() {
 gsap.registerPlugin(ScrollTrigger);
 
 // Reveal elements with stagger — NO reverse so they stay visible
-document.querySelectorAll('[data-reveal]').forEach((el, i) => {
+document.querySelectorAll('[data-reveal]').forEach((el) => {
   // Hero elements (slide 0) use initial animation, not scroll
   if (el.closest('[data-index="0"]')) return;
   gsap.to(el, {
@@ -1223,9 +1223,8 @@ document.querySelectorAll('[data-reveal]').forEach((el, i) => {
     },
     y: 0,
     opacity: 1,
-    duration: 0.9,
-    delay: i * 0.04,
-    ease: 'power3.out'
+    duration: 0.7,
+    ease: 'power2.out'
   });
 });
 
