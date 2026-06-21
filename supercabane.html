@@ -886,6 +886,9 @@
     box-shadow: 0 0 12px rgba(255,45,120,0.4);
   }
 
+  /* Elements start hidden — GSAP reveals them */
+  [data-reveal] { opacity: 0; }
+
   /* ═══════════════════════════════════════
      RESPONSIVE
      ═══════════════════════════════════════ */
@@ -1208,16 +1211,18 @@ function updateActiveDot() {
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Reveal elements with stagger
+// Reveal elements with stagger — NO reverse so they stay visible
 document.querySelectorAll('[data-reveal]').forEach((el, i) => {
-  gsap.from(el, {
+  // Hero elements (slide 0) use initial animation, not scroll
+  if (el.closest('[data-index="0"]')) return;
+  gsap.to(el, {
     scrollTrigger: {
       trigger: el,
       start: 'top 88%',
-      toggleActions: 'play none none reverse'
+      once: true
     },
-    y: 50,
-    opacity: 0,
+    y: 0,
+    opacity: 1,
     duration: 0.9,
     delay: i * 0.04,
     ease: 'power3.out'
@@ -1258,14 +1263,13 @@ document.addEventListener('keydown', (e) => {
 // INITIAL TITLE ANIMATION
 // ═══════════════════════════════════════════
 
-// Hero title letter stagger
+// Hero title
 const heroTitle = document.querySelector('.hero-title');
 if (heroTitle) {
-  gsap.from(heroTitle, {
+  gsap.set(heroTitle, { y: 80, opacity: 0, scale: 0.9 });
+  gsap.to(heroTitle, {
     duration: 1.5,
-    y: 80,
-    opacity: 0,
-    scale: 0.9,
+    y: 0, opacity: 1, scale: 1,
     ease: 'power4.out',
     delay: 0.2
   });
@@ -1274,10 +1278,10 @@ if (heroTitle) {
 // Hero badge
 const heroBadge = document.querySelector('.hero-badge');
 if (heroBadge) {
-  gsap.from(heroBadge, {
+  gsap.set(heroBadge, { y: -30 });
+  gsap.to(heroBadge, {
     duration: 1,
-    y: -30,
-    opacity: 0,
+    y: 0, opacity: 1,
     ease: 'power3.out',
     delay: 0.1
   });
@@ -1286,10 +1290,10 @@ if (heroBadge) {
 // Hero sub
 const heroSub = document.querySelector('.hero-sub');
 if (heroSub) {
-  gsap.from(heroSub, {
+  gsap.set(heroSub, { y: 40 });
+  gsap.to(heroSub, {
     duration: 1.2,
-    y: 40,
-    opacity: 0,
+    y: 0, opacity: 1,
     ease: 'power3.out',
     delay: 0.5
   });
@@ -1298,10 +1302,10 @@ if (heroSub) {
 // Hero context
 const heroContext = document.querySelector('.hero-context');
 if (heroContext) {
-  gsap.from(heroContext, {
+  gsap.set(heroContext, { y: 30 });
+  gsap.to(heroContext, {
     duration: 1,
-    y: 30,
-    opacity: 0,
+    y: 0, opacity: 1,
     ease: 'power3.out',
     delay: 0.7
   });
@@ -1310,11 +1314,10 @@ if (heroContext) {
 // Scale row stagger
 const scaleRow = document.querySelectorAll('.hero-scale-row span');
 if (scaleRow.length) {
-  gsap.from(scaleRow, {
+  gsap.set(scaleRow, { scale: 0, opacity: 0, rotation: 0 });
+  gsap.to(scaleRow, {
     duration: 0.6,
-    scale: 0,
-    opacity: 0,
-    rotation: 0,
+    scale: 1, opacity: 1, rotation: 45,
     ease: 'back.out(2)',
     stagger: 0.08,
     delay: 0.35
@@ -1331,11 +1334,10 @@ if (finalScales.length) {
     trigger: '.final-scales',
     start: 'top 85%',
     onEnter: () => {
-      gsap.from(finalScales, {
+  gsap.set(finalScales, { scale: 0, opacity: 0, rotation: 0 });
+      gsap.to(finalScales, {
         duration: 0.5,
-        scale: 0,
-        opacity: 0,
-        rotation: 0,
+        scale: 1, opacity: 1, rotation: 45,
         ease: 'back.out(2.5)',
         stagger: 0.06
       });
