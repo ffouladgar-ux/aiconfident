@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Confidence Score — What's Your AI Readiness?</title>
+<style>
+  :root {
+    --gold: #F5A623;
+    --gold-light: #FFF3D6;
+    --dark: #1D1D1F;
+    --gray: #86868B;
+    --light: #F5F5F7;
+    --white: #FFFFFF;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .container { max-width: 720px; width: 100%; padding: 40px 24px; }
+  .brand { text-align: center; margin-bottom: 32px; }
+  .brand h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .brand .gold { color: var(--gold); }
+  .brand p { font-size: 16px; color: var(--gray); margin-top: 8px; line-height: 1.5; }
+  .badge {
+    display: inline-block; background: var(--gold-light); color: #B87A00;
+    font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px;
+    margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .card {
+    background: var(--white); border-radius: 16px; padding: 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px;
+  }
+  .progress-bar { display: flex; gap: 6px; margin-bottom: 28px; }
+  .progress-step { flex: 1; height: 4px; border-radius: 2px; background: #E8E8ED; transition: background 0.3s; }
+  .progress-step.active { background: var(--gold); }
+  .progress-step.completed { background: var(--gold); }
+  .question-number { font-size: 13px; color: var(--gray); font-weight: 500; margin-bottom: 8px; }
+  .dimension-tag {
+    display: inline-block; font-size: 11px; font-weight: 600; color: var(--gold);
+    background: var(--gold-light); padding: 3px 8px; border-radius: 4px; margin-bottom: 12px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .question-text { font-size: 20px; font-weight: 600; line-height: 1.4; margin-bottom: 24px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 2px solid #E8E8ED; border-radius: 12px;
+    cursor: pointer; transition: all 0.2s; font-size: 15px; line-height: 1.4;
+  }
+  .option:hover { border-color: var(--gold); background: var(--gold-light); }
+  .option.selected { border-color: var(--gold); background: var(--gold-light); }
+  .option input[type="radio"] { display: none; }
+  .radio-dot {
+    width: 20px; height: 20px; border: 2px solid #C7C7CC; border-radius: 50%;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .radio-dot::after {
+    content: ''; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--gold); transform: scale(0); transition: transform 0.2s;
+  }
+  .option.selected .radio-dot { border-color: var(--gold); }
+  .option.selected .radio-dot::after { transform: scale(1); }
+  .nav-buttons { display: flex; justify-content: space-between; margin-top: 24px; }
+  .btn {
+    padding: 12px 28px; border: none; border-radius: 24px;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--gold); color: var(--white); }
+  .btn-primary:hover { background: #E09500; transform: translateY(-1px); }
+  .btn-primary:disabled { background: #C7C7CC; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: transparent; color: var(--gray); border: 2px solid #E8E8ED; }
+  .btn-secondary:hover { border-color: var(--gold); color: var(--dark); }
+
+  .score-circle {
+    width: 160px; height: 160px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin: 0 auto 20px; font-weight: 700;
+  }
+  .score-number { font-size: 48px; line-height: 1; }
+  .score-label { font-size: 14px; font-weight: 500; margin-top: 4px; }
+  .score-high { background: linear-gradient(135deg, #34C759, #30D158); color: white; }
+  .score-mid { background: linear-gradient(135deg, var(--gold), #FFB340); color: white; }
+  .score-low { background: linear-gradient(135deg, #FF9F0A, #FF9500); color: white; }
+  .tier-label { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .tier-desc { font-size: 15px; color: var(--gray); line-height: 1.5; margin-bottom: 24px; }
+  .dim-bar { height: 8px; background: #E8E8ED; border-radius: 4px; overflow: hidden; }
+  .dim-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold), #FFB340); }
+  .email-capture { margin-top: 24px; padding-top: 24px; border-top: 1px solid #E8E8ED; }
+  .email-capture h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .email-capture p { font-size: 14px; color: var(--gray); margin-bottom: 16px; }
+  .email-input-group { display: flex; gap: 10px; }
+  .email-input-group input {
+    flex: 1; padding: 12px 16px; border: 2px solid #E8E8ED; border-radius: 12px;
+    font-size: 15px; outline: none;
+  }
+  .email-input-group input:focus { border-color: var(--gold); }
+  .next-actions { margin-top: 24px; }
+  .next-actions h3 { font-size: 16px; margin-bottom: 12px; }
+  .next-actions li { padding: 8px 0; border-bottom: 1px solid #E8E8ED; font-size: 14px; }
+  .next-actions li::before { content: '→ '; color: var(--gold); font-weight: 600; }
+  .success-msg { text-align: center; padding: 24px; background: #E8F8EE; border-radius: 12px; margin-top: 16px; }
+  .hidden { display: none; }
+  .fade-in { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 600px) {
+    .container { padding: 24px 16px; }
+    .card { padding: 20px; }
+    .question-text { font-size: 18px; }
+    .email-input-group { flex-direction: column; }
+    .score-circle { width: 130px; height: 130px; }
+    .score-circle .score-number { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div id="intro" class="fade-in">
+    <div class="brand">
+      <div class="badge">Free Assessment · 2 min</div>
+      <h1>What's Your <span class="gold">AI Confidence Score</span>?</h1>
+      <p><strong>AI won't replace you. Someone using AI will.</strong> Find your score across 4 dimensions and get a personalized action plan.</p>
+    </div>
+    <div class="card" style="display:grid;gap:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+        <div style="text-align:center;padding:16px;background:var(--gold-light);border-radius:12px;">
+          <div style="font-size:28px;font-weight:700;">0-100</div>
+          <div style="font-size:13px;color:var(--gray);">Score</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:var(--gold-light);border-radius:12px;">
+          <div style="font-size:28px;font-weight:700;">12</div>
+          <div style="font-size:13px;color:var(--gray);">Questions</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="startQuiz()">Start Assessment →</button>
+    </div>
+  </div>
+
+  <div id="quiz" class="hidden">
+    <div class="card">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="question-number" id="questionNumber"></div>
+      <div class="dimension-tag" id="dimensionTag"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()">← Back</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="card" id="resultsCard"></div>
+  </div>
+</div>
+
+<script>
+// ---- WEBHOOK ----
+// The tunnel URL is written at build time by start-quiz-infra.sh
+const WEBHOOK_URL = 'https://tony-pas-intro-interpretation.trycloudflare.com';
+
+const Q = [
+  // AI Literacy (literacy)
+  { dim: 'literacy', dimLabel: 'AI Literacy', q: 'How would you describe your understanding of current AI capabilities?', o: [
+    { t: 'I follow AI news and can explain major developments', v: 4 },
+    { t: 'I have good general awareness of what AI can do', v: 3 },
+    { t: 'I know about ChatGPT and a few tools, but that\'s it', v: 2 },
+    { t: 'I hear about AI but don\'t really understand it', v: 1 }
+  ]},
+  { dim: 'literacy', dimLabel: 'AI Literacy', q: 'How often do you see AI-related changes affecting your industry?', o: [
+    { t: 'Weekly — AI is actively reshaping my field', v: 4 },
+    { t: 'Monthly — new tools and approaches regularly', v: 3 },
+    { t: 'Occasionally — I hear about it but hasn\'t affected me', v: 2 },
+    { t: 'Rarely — AI hasn\'t touched my industry', v: 1 }
+  ]},
+  { dim: 'literacy', dimLabel: 'AI Literacy', q: 'Can you identify which tasks in your job are most likely to be automated or augmented by AI?', o: [
+    { t: 'Yes, I have a clear map of what AI can do in my role', v: 4 },
+    { t: 'I have a rough idea but haven\'t thought it through', v: 3 },
+    { t: 'I\'ve wondered but don\'t have specifics', v: 2 },
+    { t: 'No, I haven\'t considered it', v: 1 }
+  ]},
+  // Tool Competency (tool_comp)
+  { dim: 'tool_comp', dimLabel: 'Tool Competency', q: 'How comfortable are you using AI tools (ChatGPT, Claude, Copilot, etc.) in daily work?', o: [
+    { t: 'Very comfortable — use at least one AI tool daily', v: 4 },
+    { t: 'Moderately comfortable — tried a few tools', v: 3 },
+    { t: 'Slightly uncomfortable — used one but not regularly', v: 2 },
+    { t: 'Not comfortable — haven\'t used any AI tools yet', v: 1 }
+  ]},
+  { dim: 'tool_comp', dimLabel: 'Tool Competency', q: 'Could you prompt an AI to produce a professional-quality output in your domain right now?', o: [
+    { t: 'Yes, consistently — I know how to prompt for quality', v: 4 },
+    { t: 'Sometimes — depends on the task', v: 3 },
+    { t: 'Rarely — my prompts don\'t give me what I want', v: 2 },
+    { t: 'No — I wouldn\'t know where to start', v: 1 }
+  ]},
+  { dim: 'tool_comp', dimLabel: 'Tool Competency', q: 'How would you rate your ability to critically evaluate AI-generated content?', o: [
+    { t: 'Strong — I can spot hallucinations and biases', v: 4 },
+    { t: 'Moderate — I can catch obvious errors', v: 3 },
+    { t: 'Basic — I mostly trust what AI produces', v: 2 },
+    { t: 'I don\'t know how to evaluate AI output', v: 1 }
+  ]},
+  // Workflow Integration (workflow)
+  { dim: 'workflow', dimLabel: 'Workflow Integration', q: 'How confident are you that your current skills will remain valuable in 2 years?', o: [
+    { t: 'Very confident — I\'m actively adapting my skillset', v: 4 },
+    { t: 'Fairly confident — my role will evolve, not disappear', v: 3 },
+    { t: 'Somewhat worried — I\'m not sure my skills will keep up', v: 2 },
+    { t: 'Very worried — I fear my role could be automated', v: 1 }
+  ]},
+  { dim: 'workflow', dimLabel: 'Workflow Integration', q: 'Do you have a plan for developing AI-related skills?', o: [
+    { t: 'Yes, a dedicated learning plan with specific goals', v: 4 },
+    { t: 'I have general ideas but no structured plan', v: 3 },
+    { t: 'I know I should but haven\'t started', v: 2 },
+    { t: 'No plan — I\'m unsure where to focus', v: 1 }
+  ]},
+  { dim: 'workflow', dimLabel: 'Workflow Integration', q: 'Have you used AI to significantly improve a work process or deliverable?', o: [
+    { t: 'Yes, multiple times — AI is part of my workflow', v: 4 },
+    { t: 'Yes, once or twice — with mixed results', v: 3 },
+    { t: 'I\'ve experimented but not in real work', v: 2 },
+    { t: 'No, I haven\'t applied AI to my work yet', v: 1 }
+  ]},
+  // Mindset Readiness (mindset)
+  { dim: 'mindset', dimLabel: 'Mindset Readiness', q: 'Do you see AI as an opportunity or a threat to your career?', o: [
+    { t: 'Opportunity — I actively look for ways AI can help me grow', v: 4 },
+    { t: 'Mostly opportunity — with some concerns', v: 3 },
+    { t: 'Mostly a threat — I\'m worried about being replaced', v: 2 },
+    { t: 'I don\'t know how I feel about it', v: 1 }
+  ]},
+  { dim: 'mindset', dimLabel: 'Mindset Readiness', q: 'Could you explain to your manager how AI could benefit your team?', o: [
+    { t: 'Yes, with specific examples and a proposed approach', v: 4 },
+    { t: 'I could give general ideas but not a concrete plan', v: 3 },
+    { t: 'I\'d struggle to articulate the benefits clearly', v: 2 },
+    { t: 'No, I wouldn\'t know what to suggest', v: 1 }
+  ]},
+  { dim: 'mindset', dimLabel: 'Mindset Readiness', q: 'Are you leveraging AI to create a competitive advantage in your career?', o: [
+    { t: 'Yes — AI helps me work faster, smarter, and stand out', v: 4 },
+    { t: 'Somewhat — I use AI but not strategically', v: 3 },
+    { t: 'Starting to explore how AI could help my career', v: 2 },
+    { t: 'No — I haven\'t connected AI to my career growth', v: 1 }
+  ]}
+];
+
+const DIMS = ['literacy', 'tool_comp', 'workflow', 'mindset'];
+let A = [];
+let cur = 0;
+
+function startQuiz() {
+  g('intro').classList.add('hidden');
+  g('quiz').classList.remove('hidden');
+  A = new Array(Q.length).fill(null); cur = 0;
+  p(); r();
+}
+function g(id) { return document.getElementById(id); }
+function p() {
+  const b = g('progressBar'); b.innerHTML = '';
+  Q.forEach((_, i) => {
+    const s = document.createElement('div');
+    s.className = 'progress-step';
+    if (i === cur) s.classList.add('active');
+    else if (A[i] !== null) s.classList.add('completed');
+    b.appendChild(s);
+  });
+}
+function r() {
+  const q = Q[cur];
+  g('questionNumber').textContent = `Question ${cur+1} of ${Q.length}`;
+  g('dimensionTag').textContent = q.dimLabel;
+  g('questionText').textContent = q.q;
+  const c = g('optionsContainer'); c.innerHTML = '';
+  q.o.forEach((o, i) => {
+    const d = document.createElement('div');
+    d.className = 'option' + (A[cur] === i ? ' selected' : '');
+    d.innerHTML = `<div class="radio-dot"></div><span>${o.t}</span>`;
+    d.onclick = () => { A[cur] = i; document.querySelectorAll('.option').forEach((e, j) => e.classList.toggle('selected', j === i)); g('nextBtn').disabled = false; };
+    c.appendChild(d);
+  });
+  g('prevBtn').disabled = cur === 0;
+  g('nextBtn').textContent = cur === Q.length-1 ? 'See My Score →' : 'Next →';
+  g('nextBtn').disabled = A[cur] === null;
+  p();
+}
+function nextQuestion() {
+  if (A[cur] === null) return;
+  if (cur === Q.length-1) return show();
+  cur++; r();
+}
+function prevQuestion() { if (cur > 0) { cur--; r(); } }
+
+function show() {
+  g('quiz').classList.add('hidden');
+  g('results').classList.remove('hidden');
+  const dimScores = {}; DIMS.forEach(d => dimScores[d] = {t:0,c:0});
+  let total = 0;
+  Q.forEach((q, i) => {
+    const v = q.o[A[i]].v;
+    dimScores[q.dim].t += v; dimScores[q.dim].c++;
+    total += v;
+  });
+  const pct = Math.round(total / (Q.length*4) * 100);
+  const dimPcts = {};
+  DIMS.forEach(d => { const s = dimScores[d]; dimPcts[d] = Math.round(s.t / (s.c*4) * 100); });
+
+  let tier, desc, cls;
+  if (pct >= 80) { tier = 'AI Leader 🚀'; desc = 'You\'re ahead of the curve. Now deepen expertise and teach others.'; cls = 'score-high'; }
+  else if (pct >= 55) { tier = 'AI Competent 👍'; desc = 'Solid foundation. Focused effort on weak areas will push you into the leadership zone.'; cls = 'score-mid'; }
+  else if (pct >= 35) { tier = 'AI Curious 🧐'; desc = 'You know AI matters but haven\'t fully engaged. A structured approach will fast-track your confidence.'; cls = 'score-mid'; }
+  else { tier = 'AI Beginner 🌱'; desc = 'The single most important step is starting — and you just did. Let\'s build from here.'; cls = 'score-low'; }
+
+  const ordered = [['literacy','AI Literacy'],['tool_comp','Tool Competency'],['workflow','Workflow Integration'],['mindset','Mindset Readiness']];
+  const weakest = ordered.reduce((a,b) => dimPcts[a[0]] < dimPcts[b[0]] ? a : b);
+
+  const tips = {
+    literacy: 'Subscribe to an AI newsletter (The Neuron, Last Week in AI) and spend 10 min/day reading.',
+    tool_comp: 'Pick ONE AI tool and use it for ONE real task today. Repetition builds confidence.',
+    workflow: 'Identify 3 tasks AI can augment. Create a 30-day learning plan focused on one.',
+    mindset: 'Start a small AI project at work — automate one report. Document the before/after.'
+  };
+
+  // POST to webhook
+  const answersData = Q.map((q, i) => ({ question: q.q, dimension: q.dim, answer: q.o[A[i]].t, score: q.o[A[i]].v }));
+  const payload = {
+    email: '', score: pct, tier,
+    dimensions: { literacy: dimPcts.literacy, tool_comp: dimPcts.tool_comp, workflow: dimPcts.workflow, mindset: dimPcts.mindset },
+    answers: answersData
+  };
+
+  g('resultsCard').innerHTML = `
+    <div class="fade-in" style="text-align:center;">
+      <div class="badge">Your Results</div>
+      <div class="score-circle ${cls}"><div class="score-number">${pct}</div><div class="score-label">out of 100</div></div>
+      <div class="tier-label">${tier}</div>
+      <div class="tier-desc">${desc}</div>
+    </div>
+    <div class="fade-in" style="margin:24px 0;">
+      <h3 style="font-size:16px;margin-bottom:12px;">Dimension Breakdown</h3>
+      ${ordered.map(([k,label]) => `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;"><span style="font-weight:600;">${label}</span><span style="color:var(--gray);">${dimPcts[k]}%</span></div><div class="dim-bar"><div class="dim-bar-fill" style="width:${dimPcts[k]}%"></div></div></div>`).join('')}
+    </div>
+    <div class="fade-in" style="margin:24px 0;">
+      <h3 style="font-size:16px;margin-bottom:8px;">Your Priority Action</h3>
+      <p style="font-size:14px;background:var(--gold-light);padding:12px;border-radius:8px;line-height:1.5;">💡 ${tips[weakest[0]]}</p>
+    </div>
+    <div class="email-capture fade-in" id="emailSec">
+      <h3>📥 Get Your Full Report</h3>
+      <p>Enter your email to receive your complete breakdown plus weekly AI tips.</p>
+      <div class="email-input-group">
+        <input type="email" id="emailInp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')save()">
+        <button class="btn btn-primary" onclick="save()" id="emailBtn">Send My Report →</button>
+      </div>
+      <div id="emailOk" class="hidden success-msg"><h3>✅ Check Your Inbox!</h3><p>Your AI Confidence Score breakdown is on its way.</p></div>
+    </div>
+  `;
+}
+
+function save() {
+  const e = g('emailInp').value.trim();
+  if (!e || !e.includes('@')) { g('emailInp').style.borderColor = '#FF3B30'; return; }
+  g('emailInp').style.borderColor = '#E8E8ED';
+  g('emailBtn').disabled = true; g('emailBtn').textContent = 'Sending...';
+
+  const pct = parseInt(document.querySelector('.score-number')?.textContent || '0');
+  const tier = document.querySelector('.tier-label')?.textContent || '';
+  const dims = {};
+  document.querySelectorAll('.dimension-row-header, .dimension-row').length > 0 || true;
+  
+  // Collect dimension values from the breakdown
+  const ordered = [['literacy','AI Literacy'],['tool_comp','Tool Competency'],['workflow','Workflow Integration'],['mindset','Mindset Readiness']];
+  const labels = document.querySelectorAll('.dimension-row-header');
+  
+  const answersData = Q.map((q, i) => ({ question: q.q, dimension: q.dim, answer: q.o[A[i]].t, score: q.o[A[i]].v }));
+  
+  const payload = { email: e, score: pct, tier,
+    dimensions: { literacy: Q.filter(q=>q.dim==='literacy').reduce((s,q,i)=>s+q.o[A[Q.indexOf(q)]].v,0)/12*100,
+                 tool_comp: Q.filter(q=>q.dim==='tool_comp').reduce((s,q,i)=>s+q.o[A[Q.indexOf(q)]].v,0)/12*100,
+                 workflow: Q.filter(q=>q.dim==='workflow').reduce((s,q,i)=>s+q.o[A[Q.indexOf(q)]].v,0)/12*100,
+                 mindset: Q.filter(q=>q.dim==='mindset').reduce((s,q,i)=>s+q.o[A[Q.indexOf(q)]].v,0)/12*100
+               },
+    answers: answersData
+  };
+
+  fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    .catch(() => { /* silent fallback */ });
+
+  g('emailSec').innerHTML = `<div class="success-msg"><h3>✅ Check Your Inbox!</h3><p>Your AI Confidence Score breakdown is on its way to <strong>${e}</strong>.</p></div>`;
+}
+</script>
+</body>
+</html>
