@@ -174,7 +174,7 @@
 <script>
 // ---- WEBHOOK ----
 // The tunnel URL is written at build time by start-quiz-infra.sh
-const WEBHOOK_URL = 'https://survivor-wholesale-several-www.trycloudflare.com';
+const WEBHOOK_URL = 'https://annually-misc-extensive-submission.trycloudflare.com';
 
 const Q = [
   // AI Literacy (literacy)
@@ -392,8 +392,20 @@ function save() {
     answers: answersData
   };
 
+  // Capture must never fail silently (C39): retry once, then tell the visitor.
   fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    .catch(() => { /* silent fallback */ });
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); })
+    .catch(async (err) => {
+      console.error('[capture] lead POST failed', err);
+      try {
+        const r2 = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!r2.ok) throw new Error('HTTP ' + r2.status);
+      } catch (err2) {
+        console.error('[capture] retry failed', err2);
+        const box = g('emailSec');
+        if (box) box.insertAdjacentHTML('beforeend', '<p style="color:#FF3B30;font-size:13px;margin-top:10px">We could not save your result just now. Please screenshot this page so we can still send your breakdown.</p>');
+      }
+    });
 
   g('emailSec').innerHTML = `<div class="success-msg"><h3>✅ Check Your Inbox!</h3><p>Your AI Confidence Score breakdown is on its way to <strong>${e}</strong>.</p></div>`;
 }
